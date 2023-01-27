@@ -34,9 +34,11 @@ if [ -n "$1" ]; then
 		fi
 		if [ $XDG_SESSION_TYPE=="wayland" ]; then
 			wl-copy "$path"
+			cat "$path" | wl-copy --primary
 			send_notification
 		elif [ $XDG_SESSION_TYPE=="x11" ]; then
-			printf "$path" | xclip -i
+			printf "$path" | xclip -selection clipboard
+			cat "$path" | xclip -selection primary
 			send_notification
 		else
 			printf "Unrecognized session type"
