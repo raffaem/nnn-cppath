@@ -10,6 +10,13 @@
 # Author: raffaem
 
 fromfile=${XDG_CONFIG_HOME:-$HOME/.config}/nnn/cppathfrom
+notify=1
+
+send_notification() {
+	if [ "$notify" -eq 1 ]; then
+		notify-send "cppath" "Path '$path' copied to clipboard"
+	fi
+}
 
 if [ -n "$1" ]; then
 
@@ -27,15 +34,17 @@ if [ -n "$1" ]; then
 		fi
 		if [ $XDG_SESSION_TYPE=="wayland" ]; then
 			wl-copy "$path"
+			send_notification
 		elif [ $XDG_SESSION_TYPE=="x11" ]; then
-			echo "$path" | xclip -i
+			printf "$path" | xclip -i
+			send_notification
 		else
-			print "Unrecognized session type"
+			printf "Unrecognized session type"
 		fi
 		# If you want a system notification, uncomment this line.
 		#notify-send -a "nnn" "Copied '"$path"' to clipboard."
 	fi
 
 else
-	print "No file selected"
+	printf "No file selected"
 fi
