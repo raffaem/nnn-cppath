@@ -10,6 +10,8 @@
 # Author: raffaem
 
 fromfile=${XDG_CONFIG_HOME:-$HOME/.config}/nnn/cppathfrom
+# If you want a system notification when a file path is copied to clipboard,
+# put this variable  to 1.
 notify=1
 
 send_notification() {
@@ -18,35 +20,34 @@ send_notification() {
 	fi
 }
 
-if [ -n "$1" ]; then
+if [ -z "$1" ]; then
+	printf "ERROR: No file selected"
+	exit
+fi
 
-	if ! [ -f $fromfile ]; then
-		echo "$(realpath "$1")" > $fromfile;
-	else
-		from="$(cat $fromfile)"
-		rm "$fromfile"
-		to="$(realpath "$1")"
-		if [ "$from" == "$to" ]; then
-			path="$from"
-		else
-			from="$(dirname "$from")"
-			path="$(realpath --relative-to="$from" "$to")"
-		fi
-		if [ $XDG_SESSION_TYPE=="wayland" ]; then
-			wl-copy "$path"
-			cat "$path" | wl-copy --primary
-			send_notification
-		elif [ $XDG_SESSION_TYPE=="x11" ]; then
-			printf "$path" | xclip -selection clipboard
-			cat "$path" | xclip -selection primary
-			send_notification
-		else
-			printf "Unrecognized session type"
-		fi
-		# If you want a system notification, uncomment this line.
-		#notify-send -a "nnn" "Copied '"$path"' to clipboard."
-	fi
-
+if ! [ -f "$fromfile" ]; then
+	realpath "$1" >"$fromfile"
 else
-	printf "No file selected"
+	from="$(cat "$fromfile")"
+	rm "$fromfile"
+	to="$(realpath "$1")"
+	if [ "$from" == "$to" ]; then
+		path="$from"
+	else
+		from="$(dirname "$from")"
+		path="$(realpath --relative-to="$from" "$to")"
+	fi
+	if [ "$XDG_SESSION_TYPE" == "wayland" ]; then
+		# We need `echo` here and not `cat`
+		# as we need to  copy the file path, not the file content
+		printf "%s" "$path" | wl-copy
+		printf "%s" "$path" | wl-copy --primary
+		send_notification
+	elif [ "$XDG_SESSION_TYPE" == "x11" ]; then
+		printf "%s" "$path" | xclip -selection clipboard
+		printf "%s" "$path" | xclip -selection primary
+		send_notification
+	else
+		printf "ERROR: Unrecognized session type"
+	fi
 fi
